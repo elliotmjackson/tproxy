@@ -6,9 +6,9 @@ import (
 	"os"
 
 	"github.com/fatih/color"
+	"github.com/kevwan/tproxy"
+	"github.com/kevwan/tproxy/internal/config"
 )
-
-var settings Settings
 
 func main() {
 	var (
@@ -28,7 +28,7 @@ func main() {
 	}
 
 	flag.Parse()
-	saveSettings(*localHost, *localPort, *remote, *delay, *protocol, *stat, *quiet)
+	settings := config.SaveSettings(*localHost, *localPort, *remote, *delay, *protocol, *stat, *quiet)
 
 	if len(settings.Remote) == 0 {
 		fmt.Fprintln(os.Stderr, color.HiRedString("[x] Remote target required"))
@@ -36,7 +36,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := startListener(); err != nil {
+	if err := tproxy.StartListener(settings); err != nil {
 		fmt.Fprintln(os.Stderr, color.HiRedString("[x] Failed to start listener: %v", err))
 		os.Exit(1)
 	}

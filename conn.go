@@ -1,26 +1,20 @@
-package main
+package tproxy
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"net"
 	"sync"
-	"time"
 
 	"github.com/fatih/color"
-	"github.com/kevwan/tproxy/display"
-	"github.com/kevwan/tproxy/protocol"
+	"github.com/kevwan/tproxy/internal/config"
+	"github.com/kevwan/tproxy/internal/display"
+	"github.com/kevwan/tproxy/internal/protocol"
+	"github.com/kevwan/tproxy/internal/writer"
 )
 
 const (
 	useOfClosedConn = "use of closed network connection"
-	statInterval    = time.Second * 5
-)
-
-var (
-	errClientCanceled = errors.New("client canceled")
-	stat              Stater
 )
 
 type PairedConnection struct {
@@ -29,13 +23,15 @@ type PairedConnection struct {
 	svrConn  net.Conn
 	once     sync.Once
 	stopChan chan struct{}
+	settings config.Settings
 }
 
-func NewPairedConnection(id int, cliConn net.Conn) *PairedConnection {
+func NewPairedConnection(id int, cliConn net.Conn, settings config.Settings) *PairedConnection {
 	return &PairedConnection{
 		id:       id,
 		cliConn:  cliConn,
 		stopChan: make(chan struct{}),
+		settings: settings,
 	}
 }
 
@@ -56,7 +52,7 @@ func (c *PairedConnection) handleClientMessage() {
 
 	r, w := io.Pipe()
 	tee := io.MultiWriter(c.svrConn, w)
-	go protocol.CreateInterop(settings.Protocol).Dump(r, protocol.ClientSide, c.id, settings.Quiet)
+	go protocol.CreateInterop(c.settings.Protocol).Dump(r, protocol.ClientSide, c.id, c.settings.Quiet)
 	c.copyData(tee, c.cliConn, protocol.ClientSide)
 }
 
@@ -65,15 +61,15 @@ func (c *PairedConnection) handleServerMessage() {
 	defer c.stop()
 
 	r, w := io.Pipe()
-	tee := io.MultiWriter(newDelayedWriter(c.cliConn, settings.Delay, c.stopChan), w)
-	go protocol.CreateInterop(settings.Protocol).Dump(r, protocol.ServerSide, c.id, settings.Quiet)
+	tee := io.MultiWriter(writer.NewDelayedWriter(c.cliConn, c.settings.Delay, c.stopChan), w)
+	go protocol.CreateInterop(c.settings.Protocol).Dump(r, protocol.ServerSide, c.id, c.settings.Quiet)
 	c.copyData(tee, c.svrConn, protocol.ServerSide)
 }
 
 func (c *PairedConnection) process() {
 	defer c.stop()
 
-	conn, err := net.Dial("tcp", settings.Remote)
+	conn, err := net.Dial("tcp", c.settings.Remote)
 	if err != nil {
 		display.PrintlnWithTime(color.HiRedString("[x][%d] Couldn't connect to server: %v", c.id, err))
 		return
@@ -81,7 +77,6 @@ func (c *PairedConnection) process() {
 
 	display.PrintlnWithTime(color.HiGreenString("[%d] Connected to server: %s", c.id, conn.RemoteAddr()))
 
-	stat.AddConn(fmt.Sprintf("%d:server", c.id), conn.(*net.TCPConn))
 	c.svrConn = conn
 	go c.handleServerMessage()
 
@@ -91,9 +86,6 @@ func (c *PairedConnection) process() {
 func (c *PairedConnection) stop() {
 	c.once.Do(func() {
 		close(c.stopChan)
-		stat.DelConn(fmt.Sprintf("%d:server", c.id))
-		stat.DelConn(fmt.Sprintf("%d:client", c.id))
-
 		if c.cliConn != nil {
 			display.PrintlnWithTime(color.HiBlueString("[%d] Client connection closed", c.id))
 			c.cliConn.Close()
@@ -105,10 +97,7 @@ func (c *PairedConnection) stop() {
 	})
 }
 
-func startListener() error {
-	stat = NewStatPrinter(statInterval)
-	go stat.Start()
-
+func StartListener(settings config.Settings) error {
 	conn, err := net.Listen("tcp", fmt.Sprintf("%s:%d", settings.LocalHost, settings.LocalPort))
 	if err != nil {
 		return fmt.Errorf("failed to start listener: %w", err)
@@ -128,8 +117,7 @@ func startListener() error {
 		display.PrintlnWithTime(color.HiGreenString("[%d] Accepted from: %s",
 			connIndex, cliConn.RemoteAddr()))
 
-		stat.AddConn(fmt.Sprintf("%d:client", connIndex), cliConn.(*net.TCPConn))
-		pconn := NewPairedConnection(connIndex, cliConn)
+		pconn := NewPairedConnection(connIndex, cliConn, settings)
 		go pconn.process()
 	}
 }

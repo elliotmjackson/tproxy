@@ -1,7 +1,14 @@
+buf.build/gen/go/bufbuild/eliza/bufbuild/connect-go v1.4.0-20221108170037-30afbf7c670d.1 h1:v85XhgHzTgCOb1W0rLMQnCrTy/jmcyR3LyTkDh3QqNo=
+buf.build/gen/go/bufbuild/eliza/bufbuild/connect-go v1.4.0-20221108170037-30afbf7c670d.1/go.mod h1:UJpg+YZ7Afy3LmdAJoKx8o3Xt/D+SeHeDgKP3zXaylc=
+buf.build/gen/go/bufbuild/eliza/protocolbuffers/go v1.28.1-20221108170037-30afbf7c670d.4 h1:S7/7v9nDq9Cj/5PFCdhp9/M3DvtKwkd6G8h4wUZKZ0A=
+buf.build/gen/go/bufbuild/eliza/protocolbuffers/go v1.28.1-20221108170037-30afbf7c670d.4/go.mod h1:o+MHFUanU15Zk5uNgkUM6WteQPoSS6xk/HlbVmiZuGI=
+github.com/bufbuild/connect-go v1.4.0 h1:N94D0tGxuM2cSI7hM/aL8mtxL6+8rtHuFcIj9oGRp5s=
+github.com/bufbuild/connect-go v1.4.0/go.mod h1:9iNvh/NOsfhNBUH5CtvXeVUskQO1xsrEviH7ZArwZ3I=
 github.com/fatih/color v1.13.0 h1:8LOYc1KYPPmyKMuN8QV2DNRWNbLo6LZ0iLs8+mlH53w=
 github.com/fatih/color v1.13.0/go.mod h1:kLAiJbzzSOZDVNGyDpeOxJ47H46qBXwg5ILebYFFOfk=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
+github.com/google/go-cmp v0.5.9 h1:O2Tfq5qg4qc4AmwVlvv0oLiVAGB7enBSJ2x2DqQFi38=
 github.com/mattn/go-colorable v0.1.9 h1:sqDoxXbdeALODt0DAeJCVp38ps9ZogZEAXjus69YV3U=
 github.com/mattn/go-colorable v0.1.9/go.mod h1:u6P/XSegPjTcexA+o6vUJrdnUu04hMope9wVRipJSqc=
 github.com/mattn/go-isatty v0.0.12/go.mod h1:cbi8OIDigv2wuxKPP5vlRcQ1OAZbq2CE4Kysco4FUpU=

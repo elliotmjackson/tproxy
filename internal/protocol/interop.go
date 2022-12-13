@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/kevwan/tproxy/display"
+	"github.com/kevwan/tproxy/internal/display"
 )
 
 const (
@@ -16,8 +16,6 @@ const (
 	grpcProtocol  = "grpc"
 	http2Protocol = "http2"
 )
-
-var interop defaultInterop
 
 type Interop interface {
 	Dump(r io.Reader, source string, id int, quiet bool)
@@ -32,7 +30,7 @@ func CreateInterop(protocol string) Interop {
 	case http2Protocol:
 		return new(http2Interop)
 	default:
-		return interop
+		return defaultInterop{}
 	}
 }
 

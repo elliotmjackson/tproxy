@@ -1,6 +1,7 @@
-package main
+package writer
 
 import (
+	"errors"
 	"io"
 	"time"
 )
@@ -11,7 +12,7 @@ type delayedWriter struct {
 	stopChan <-chan struct{}
 }
 
-func newDelayedWriter(writer io.Writer, delay time.Duration, stopChan <-chan struct{}) delayedWriter {
+func NewDelayedWriter(writer io.Writer, delay time.Duration, stopChan <-chan struct{}) delayedWriter {
 	return delayedWriter{
 		writer:   writer,
 		delay:    delay,
@@ -31,6 +32,6 @@ func (w delayedWriter) Write(p []byte) (int, error) {
 	case <-timer.C:
 		return w.writer.Write(p)
 	case <-w.stopChan:
-		return 0, errClientCanceled
+		return 0, errors.New("client canceled")
 	}
 }
