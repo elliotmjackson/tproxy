@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/kevwan/tproxy/internal/display"
+	"github.com/elliotmjackson/tproxy/internal/display"
 )
 
 const (

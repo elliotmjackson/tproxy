@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/elliotmjackson/tproxy"
+	"github.com/elliotmjackson/tproxy/internal/config"
 	"github.com/fatih/color"
-	"github.com/kevwan/tproxy"
-	"github.com/kevwan/tproxy/internal/config"
 )
 
 func main() {

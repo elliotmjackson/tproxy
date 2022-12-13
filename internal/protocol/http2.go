@@ -8,8 +8,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/elliotmjackson/tproxy/internal/display"
 	"github.com/fatih/color"
-	"github.com/kevwan/tproxy/internal/display"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/hpack"
 )

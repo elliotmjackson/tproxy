@@ -6,11 +6,11 @@ import (
 	"net"
 	"sync"
 
+	"github.com/elliotmjackson/tproxy/internal/config"
+	"github.com/elliotmjackson/tproxy/internal/display"
+	"github.com/elliotmjackson/tproxy/internal/protocol"
+	"github.com/elliotmjackson/tproxy/internal/writer"
 	"github.com/fatih/color"
-	"github.com/kevwan/tproxy/internal/config"
-	"github.com/kevwan/tproxy/internal/display"
-	"github.com/kevwan/tproxy/internal/protocol"
-	"github.com/kevwan/tproxy/internal/writer"
 )
 
 const (
