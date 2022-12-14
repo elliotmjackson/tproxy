@@ -5,8 +5,8 @@ import (
 	"io"
 	"net"
 	"sync"
+	"time"
 
-	"github.com/elliotmjackson/tproxy/internal/config"
 	"github.com/elliotmjackson/tproxy/internal/display"
 	"github.com/elliotmjackson/tproxy/internal/protocol"
 	"github.com/elliotmjackson/tproxy/internal/writer"
@@ -23,15 +23,50 @@ type PairedConnection struct {
 	svrConn  net.Conn
 	once     sync.Once
 	stopChan chan struct{}
-	settings config.Settings
+	protocol string
+	quiet    bool
+	delay    time.Duration
 }
 
-func NewPairedConnection(id int, cliConn net.Conn, settings config.Settings) *PairedConnection {
+func NewPairedConnection(
+	id int,
+	cliConn net.Conn,
+	protocol string,
+	quiet bool,
+	delay time.Duration,
+) *PairedConnection {
 	return &PairedConnection{
 		id:       id,
 		cliConn:  cliConn,
 		stopChan: make(chan struct{}),
-		settings: settings,
+		protocol: protocol,
+		quiet:    quiet,
+		delay:    delay,
+	}
+}
+
+func (p *Proxy) StartListener() error {
+	conn, err := net.Listen("tcp", p.Local.Addr())
+	if err != nil {
+		return fmt.Errorf("failed to start listener: %w", err)
+	}
+	defer conn.Close()
+
+	display.PrintfWithTime("Listening on %s...\n", conn.Addr().String())
+
+	var connIndex int
+	for {
+		cliConn, err := conn.Accept()
+		if err != nil {
+			return fmt.Errorf("server: accept: %w", err)
+		}
+
+		connIndex++
+		display.PrintlnWithTime(color.HiGreenString("[%d] Accepted from: %s",
+			connIndex, cliConn.RemoteAddr()))
+
+		pconn := NewPairedConnection(connIndex, cliConn, p.protocol, p.quiet, p.delay)
+		go pconn.process(p.Remote)
 	}
 }
 
@@ -52,7 +87,7 @@ func (c *PairedConnection) handleClientMessage() {
 
 	r, w := io.Pipe()
 	tee := io.MultiWriter(c.svrConn, w)
-	go protocol.CreateInterop(c.settings.Protocol).Dump(r, protocol.ClientSide, c.id, c.settings.Quiet)
+	go protocol.CreateInterop(c.protocol).Dump(r, protocol.ClientSide, c.id, c.quiet)
 	c.copyData(tee, c.cliConn, protocol.ClientSide)
 }
 
@@ -61,15 +96,15 @@ func (c *PairedConnection) handleServerMessage() {
 	defer c.stop()
 
 	r, w := io.Pipe()
-	tee := io.MultiWriter(writer.NewDelayedWriter(c.cliConn, c.settings.Delay, c.stopChan), w)
-	go protocol.CreateInterop(c.settings.Protocol).Dump(r, protocol.ServerSide, c.id, c.settings.Quiet)
+	tee := io.MultiWriter(writer.NewDelayedWriter(c.cliConn, c.delay, c.stopChan), w)
+	go protocol.CreateInterop(c.protocol).Dump(r, protocol.ServerSide, c.id, c.quiet)
 	c.copyData(tee, c.svrConn, protocol.ServerSide)
 }
 
-func (c *PairedConnection) process() {
+func (c *PairedConnection) process(remote string) {
 	defer c.stop()
 
-	conn, err := net.Dial("tcp", c.settings.Remote)
+	conn, err := net.Dial("tcp", remote)
 	if err != nil {
 		display.PrintlnWithTime(color.HiRedString("[x][%d] Couldn't connect to server: %v", c.id, err))
 		return
@@ -95,29 +130,4 @@ func (c *PairedConnection) stop() {
 			c.svrConn.Close()
 		}
 	})
-}
-
-func StartListener(settings config.Settings) error {
-	conn, err := net.Listen("tcp", fmt.Sprintf("%s:%d", settings.LocalHost, settings.LocalPort))
-	if err != nil {
-		return fmt.Errorf("failed to start listener: %w", err)
-	}
-	defer conn.Close()
-
-	display.PrintfWithTime("Listening on %s...\n", conn.Addr().String())
-
-	var connIndex int
-	for {
-		cliConn, err := conn.Accept()
-		if err != nil {
-			return fmt.Errorf("server: accept: %w", err)
-		}
-
-		connIndex++
-		display.PrintlnWithTime(color.HiGreenString("[%d] Accepted from: %s",
-			connIndex, cliConn.RemoteAddr()))
-
-		pconn := NewPairedConnection(connIndex, cliConn, settings)
-		go pconn.process()
-	}
 }

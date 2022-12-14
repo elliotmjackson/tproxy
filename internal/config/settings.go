@@ -16,8 +16,8 @@ type Settings struct {
 
 func SaveSettings(localHost string, localPort int, remote string, delay time.Duration,
 	protocol string, stat, quiet bool,
-) Settings {
-	out := Settings{}
+) (*Settings, error) {
+	out := &Settings{}
 	if localHost != "" {
 		out.LocalHost = localHost
 	}
@@ -31,5 +31,5 @@ func SaveSettings(localHost string, localPort int, remote string, delay time.Dur
 	out.Protocol = protocol
 	out.Stat = stat
 	out.Quiet = quiet
-	return out
+	return out, nil
 }
